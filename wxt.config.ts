@@ -6,6 +6,6 @@ export default defineConfig({
     manifest: {
         name: 'Focus - Website Blocker',
         description: 'Block distracting websites with keyword-based filtering to stay focused and productive',
-        permissions: ['storage'],
+        permissions: ['storage', 'offscreen'],
     },
 });
