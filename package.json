@@ -2,7 +2,7 @@
   "name": "focus-filter-extension",
   "description": "A Chrome extension to block distracting websites using keyword-based filtering with a beautiful Material 3 dark theme UI",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "scripts": {
     "dev": "wxt",

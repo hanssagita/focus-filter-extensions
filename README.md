@@ -1,7 +1,7 @@
 <div align="center">
   <img src="assets/logo.png" alt="Focus Filter Logo" width="128" height="128" />
 
-  # Focus Filter Extension
+# Focus Filter Extension
 
   **Regain your attention. Block distractions. Stay Flow.**
 
@@ -35,6 +35,7 @@ No tracking. No data collection. Just pure focus.
 - **⚡️ Zero-Latency**: Runs instantly at `document_start` to prevent distractions before they load.
 - **🛡️ Privacy First**: 100% local processing. Your data never leaves your browser.
 - **🎯 Global Focus Toggle**: One distinct switch to turn "Focus Mode" on or off instantly.
+- **🎵 Solstice Radio**: Built-in Lofi Player (powered by lofi.cafe) to help you get into flow state with focus music.
 - **🛑 Gentle Interventions**: A calming, aesthetically pleasing "Site Blocked" page that reminds you to get back on track.
 
 ## 📸 Screenshots
@@ -56,9 +57,11 @@ Built with the modern web extension stack:
 ## 📦 Installation
 
 ### Chrome Web Store
+
 *(Coming Soon - You can link your store URL here once published)*
 
 ### Manual Installation (Developer API)
+
 1. Download the latest release `.zip` or build from source.
 2. Open Chrome and navigate to `chrome://extensions/`.
 3. Toggle **Developer mode** in the top right.
@@ -69,10 +72,12 @@ Built with the modern web extension stack:
 Want to hack on Focus Filter? We'd love your help!
 
 ### Prerequisites
+
 - Node.js 22+ (Check `.nvmrc`)
 - npm or yarn
 
 ### Setup
+
 ```bash
 # 1. Clone the repo
 git clone https://github.com/yourusername/focus-filter-extension.git
@@ -83,15 +88,18 @@ npm install
 # 3. Start Dev Server (Hot Reload)
 npm run dev
 ```
+
 > The extension will auto-reload as you edit files!
 
 ### Building
+
 ```bash
 npm run build     # Build for production
 npm run zip       # Create a publishable .zip file
 ```
 
 ### Testing
+
 ```bash
 npm test          # Run unit tests
 npm test:ui       # Run tests with visual UI
