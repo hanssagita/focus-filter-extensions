@@ -12,8 +12,10 @@ import {
     removeBlockedSite,
 } from '../../lib/storage';
 
+import { TimerTab } from './TimerTab';
+
 function App() {
-    const [activeTab, setActiveTab] = useState<'focus' | 'solstice'>('focus');
+    const [activeTab, setActiveTab] = useState<'focus' | 'timer' | 'solstice'>('focus');
     const [isEnabled, setIsEnabled] = useState(true);
     const [blockedSites, setBlockedSitesState] = useState<string[]>([]);
     const [newSite, setNewSite] = useState('');
@@ -112,6 +114,15 @@ function App() {
                         )}
                     </button>
                     <button
+                        onClick={() => setActiveTab('timer')}
+                        className={`text-sm font-semibold transition-colors relative ${activeTab === 'timer' ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+                    >
+                        Timer
+                        {activeTab === 'timer' && (
+                            <div className="absolute -bottom-[17px] left-0 right-0 h-[2px] bg-primary rounded-t-full" />
+                        )}
+                    </button>
+                    <button
                         onClick={() => setActiveTab('solstice')}
                         className={`text-sm font-semibold transition-colors relative ${activeTab === 'solstice' ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
                     >
@@ -128,7 +139,9 @@ function App() {
 
             {/* Content Area */}
             <div className="flex-1 overflow-y-auto">
-                {activeTab === 'focus' ? (
+                {activeTab === 'timer' ? (
+                    <TimerTab />
+                ) : activeTab === 'focus' ? (
                     <Card className="border-0 rounded-none shadow-none bg-transparent">
                         <CardHeader className="space-y-4 pt-6">
                             <div className="flex items-center justify-between">
