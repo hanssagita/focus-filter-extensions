@@ -1,8 +1,38 @@
-import { getTimerState, updateTimerState, DEFAULT_TIMER_STATE } from '../lib/storage';
+import {
+  getTimerState,
+  updateTimerState,
+  DEFAULT_TIMER_STATE,
+  getIsTabLimitEnabled,
+  getMaxTabsLimit
+} from '../lib/storage';
 
 export default defineBackground(() => {
   // Store the window ID
   let audioWindowId: number | null = null;
+
+  // Tab limit monitoring
+  browser.tabs.onCreated.addListener(async (tab) => {
+    try {
+      const isEnabled = await getIsTabLimitEnabled();
+      if (!isEnabled) return;
+
+      const limit = await getMaxTabsLimit();
+      const allTabs = await browser.tabs.query({});
+
+      if (allTabs.length > limit && tab.id) {
+        await browser.tabs.remove(tab.id);
+        browser.notifications.create({
+          type: 'basic',
+          iconUrl: browser.runtime.getURL('icon/128.png' as any),
+          title: 'Tab Limit Reached',
+          message: `You've reached your maximum limit of ${limit} open tabs.`,
+          priority: 1
+        });
+      }
+    } catch (error) {
+      console.error('Error in tab limit logic:', error);
+    }
+  });
 
   // Initialize alarms
   browser.alarms.onAlarm.addListener(async (alarm) => {

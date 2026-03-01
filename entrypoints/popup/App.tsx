@@ -10,55 +10,52 @@ import {
     getBlockedSites,
     addBlockedSite,
     removeBlockedSite,
+    getIsTabLimitEnabled,
+    setIsTabLimitEnabled,
+    getMaxTabsLimit,
+    setMaxTabsLimit
 } from '../../lib/storage';
 
-import { TimerTab } from './TimerTab';
-
 function App() {
-    const [activeTab, setActiveTab] = useState<'focus' | 'timer' | 'solstice'>('focus');
+    const [activeTab, setActiveTab] = useState<'focus'>('focus');
     const [isEnabled, setIsEnabled] = useState(true);
     const [blockedSites, setBlockedSitesState] = useState<string[]>([]);
     const [newSite, setNewSite] = useState('');
-
-    // Audio State
-    const [isPlaying, setIsPlaying] = useState(false);
+    const [isTabLimitEnabled, setIsTabLimitEnabledState] = useState(false);
+    const [maxTabsLimit, setMaxTabsLimitState] = useState(10);
 
     // Load initial data
     useEffect(() => {
         const loadData = async () => {
             const enabled = await getIsBlockingEnabled();
             const sites = await getBlockedSites();
+            const tabLimitEnabled = await getIsTabLimitEnabled();
+            const tabLimit = await getMaxTabsLimit();
+
             setIsEnabled(enabled);
             setBlockedSitesState(sites);
-
-            // Check audio status
-            try {
-                const response = await browser.runtime.sendMessage({ type: 'GET_AUDIO_STATUS' });
-                if (response && response.isPlaying) {
-                    setIsPlaying(true);
-                }
-            } catch (e) {
-                // Ignore error if background not ready
-            }
+            setIsTabLimitEnabledState(tabLimitEnabled);
+            setMaxTabsLimitState(tabLimit);
         };
         loadData();
-
-        // Listen for status changes (e.g. if window closed manually)
-        const messageListener = (message: any) => {
-            if (message.type === 'AUDIO_STATUS_CHANGED') {
-                setIsPlaying(message.isPlaying);
-            }
-        };
-        browser.runtime.onMessage.addListener(messageListener);
-
-        return () => {
-            browser.runtime.onMessage.removeListener(messageListener);
-        };
     }, []);
 
     const handleToggle = async (checked: boolean) => {
         setIsEnabled(checked);
         await setIsBlockingEnabled(checked);
+    };
+
+    const handleTabLimitToggle = async (checked: boolean) => {
+        setIsTabLimitEnabledState(checked);
+        await setIsTabLimitEnabled(checked);
+    };
+
+    const handleTabLimitChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = parseInt(e.target.value, 10);
+        if (!isNaN(val) && val > 0) {
+            setMaxTabsLimitState(val);
+            await setMaxTabsLimit(val);
+        }
     };
 
     const handleAddSite = async () => {
@@ -83,22 +80,6 @@ function App() {
         }
     };
 
-    // Audio Logic
-    const toggleAudio = async () => {
-        const newState = !isPlaying;
-        setIsPlaying(newState); // Optimistic UI update
-        try {
-            if (newState) {
-                await browser.runtime.sendMessage({ type: 'PLAY_AUDIO' });
-            } else {
-                await browser.runtime.sendMessage({ type: 'STOP_AUDIO' });
-            }
-        } catch (error) {
-            console.error('Audio toggle failed:', error);
-            setIsPlaying(!newState); // Revert on failure
-        }
-    };
-
     return (
         <div className="w-[400px] min-h-[500px] bg-background text-foreground dark flex flex-col">
             {/* Header / Tabs */}
@@ -113,24 +94,6 @@ function App() {
                             <div className="absolute -bottom-[17px] left-0 right-0 h-[2px] bg-primary rounded-t-full" />
                         )}
                     </button>
-                    <button
-                        onClick={() => setActiveTab('timer')}
-                        className={`text-sm font-semibold transition-colors relative ${activeTab === 'timer' ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
-                    >
-                        Timer
-                        {activeTab === 'timer' && (
-                            <div className="absolute -bottom-[17px] left-0 right-0 h-[2px] bg-primary rounded-t-full" />
-                        )}
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('solstice')}
-                        className={`text-sm font-semibold transition-colors relative ${activeTab === 'solstice' ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
-                    >
-                        Solstice
-                        {activeTab === 'solstice' && (
-                            <div className="absolute -bottom-[17px] left-0 right-0 h-[2px] bg-primary rounded-t-full" />
-                        )}
-                    </button>
                 </div>
 
                 {/* Global Focus Status Indicator (small) */}
@@ -139,9 +102,7 @@ function App() {
 
             {/* Content Area */}
             <div className="flex-1 overflow-y-auto">
-                {activeTab === 'timer' ? (
-                    <TimerTab />
-                ) : activeTab === 'focus' ? (
+                {activeTab === 'focus' && (
                     <Card className="border-0 rounded-none shadow-none bg-transparent">
                         <CardHeader className="space-y-4 pt-6">
                             <div className="flex items-center justify-between">
@@ -153,6 +114,30 @@ function App() {
                         </CardHeader>
 
                         <CardContent className="space-y-6">
+                            {/* Tab Limit Section */}
+                            <div className="space-y-3 pb-4 border-b border-border/40">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <label className="text-sm font-medium text-foreground">Limit Open Tabs</label>
+                                        <Tooltip content="Automatically close new tabs if you exceed the limit.">
+                                            <div className="flex items-center justify-center w-5 h-5 rounded-full bg-muted text-muted-foreground text-xs cursor-help hover:bg-primary hover:text-primary-foreground transition-colors">?</div>
+                                        </Tooltip>
+                                    </div>
+                                    <Switch checked={isTabLimitEnabled} onCheckedChange={handleTabLimitToggle} />
+                                </div>
+                                <div className="flex items-center gap-3">
+                                    <label className="text-sm text-muted-foreground flex-1">Maximum allowed tabs</label>
+                                    <Input
+                                        type="number"
+                                        min="1"
+                                        value={maxTabsLimit}
+                                        onChange={handleTabLimitChange}
+                                        disabled={!isTabLimitEnabled}
+                                        className="w-20 text-center"
+                                    />
+                                </div>
+                            </div>
+
                             {/* Add Site Section */}
                             <div className="space-y-3">
                                 <div className="flex items-center gap-2">
@@ -196,46 +181,6 @@ function App() {
                             </div>
                         </CardContent>
                     </Card>
-                ) : (
-                    // Solstice Tab
-                    <div className="h-full flex flex-col items-center justify-center p-6 text-center space-y-8 animate-in fade-in duration-300">
-                        <div className="space-y-2">
-                            <h2 className="text-2xl font-light tracking-wide text-foreground">Solstice Radio</h2>
-                            <p className="text-sm text-muted-foreground">Focus frequencies via <b>lofi.cafe</b></p>
-                        </div>
-
-                        {/* Visualizer / Card */}
-                        <div className={`w-48 h-48 rounded-3xl bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border border-white/10 flex items-center justify-center relative overflow-hidden transition-all duration-700 ${isPlaying ? 'shadow-[0_0_40px_rgba(99,102,241,0.2)]' : ''}`}>
-                            {isPlaying ? (
-                                <div className="flex gap-1 items-end h-16">
-                                    {[...Array(5)].map((_, i) => (
-                                        <div key={i} className="w-2 bg-primary rounded-full animate-pulse" style={{ height: '40%', animationDelay: `${i * 0.1}s`, animationDuration: '0.8s' }} />
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="text-4xl grayscale opacity-30">☕️</div>
-                            )}
-                        </div>
-
-                        {/* Controls */}
-                        <div className="space-y-6 w-full max-w-xs">
-                            <Button
-                                onClick={toggleAudio}
-                                size="lg"
-                                className={`w-full h-14 text-lg rounded-full transition-all duration-300 ${isPlaying ? 'bg-secondary text-secondary-foreground hover:bg-secondary/80' : 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_0_20px_rgba(56,189,248,0.3)]'}`}
-                            >
-                                {isPlaying ? 'Pause Transmission' : 'Start Focus Audio'}
-                            </Button>
-
-                            <a
-                                href="https://lofi.cafe"
-                                target="_blank"
-                                className="block text-xs text-muted-foreground/60 hover:text-primary transition-colors"
-                            >
-                                Open Full Player ↗
-                            </a>
-                        </div>
-                    </div>
                 )}
             </div>
         </div>

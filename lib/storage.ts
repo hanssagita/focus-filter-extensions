@@ -2,6 +2,8 @@ export interface StorageData {
     isBlockingEnabled: boolean;
     blockedSites: string[];
     timerState: TimerState;
+    isTabLimitEnabled: boolean;
+    maxTabsLimit: number;
 }
 
 export interface TimerState {
@@ -19,6 +21,8 @@ export const STORAGE_KEYS = {
     IS_BLOCKING_ENABLED: 'isBlockingEnabled',
     BLOCKED_SITES: 'blockedSites',
     TIMER_STATE: 'timerState',
+    IS_TAB_LIMIT_ENABLED: 'isTabLimitEnabled',
+    MAX_TABS_LIMIT: 'maxTabsLimit',
 } as const;
 
 export const DEFAULT_TIMER_STATE: TimerState = {
@@ -74,5 +78,24 @@ export async function setTimerState(state: TimerState): Promise<void> {
 export async function updateTimerState(updates: Partial<TimerState>): Promise<void> {
     const currentState = await getTimerState();
     await setTimerState({ ...currentState, ...updates });
+}
+
+export async function getIsTabLimitEnabled(): Promise<boolean> {
+    const result = await chrome.storage.local.get(STORAGE_KEYS.IS_TAB_LIMIT_ENABLED) as any;
+    return result[STORAGE_KEYS.IS_TAB_LIMIT_ENABLED] ?? false;
+}
+
+export async function setIsTabLimitEnabled(enabled: boolean): Promise<void> {
+    await chrome.storage.local.set({ [STORAGE_KEYS.IS_TAB_LIMIT_ENABLED]: enabled });
+}
+
+export async function getMaxTabsLimit(): Promise<number> {
+    const result = await chrome.storage.local.get(STORAGE_KEYS.MAX_TABS_LIMIT) as any;
+    // Default to 10
+    return result[STORAGE_KEYS.MAX_TABS_LIMIT] ?? 10;
+}
+
+export async function setMaxTabsLimit(limit: number): Promise<void> {
+    await chrome.storage.local.set({ [STORAGE_KEYS.MAX_TABS_LIMIT]: limit });
 }
 
