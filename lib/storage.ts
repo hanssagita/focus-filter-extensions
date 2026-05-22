@@ -23,6 +23,7 @@ export const STORAGE_KEYS = {
     TIMER_STATE: 'timerState',
     IS_TAB_LIMIT_ENABLED: 'isTabLimitEnabled',
     MAX_TABS_LIMIT: 'maxTabsLimit',
+    PASSWORD_HASH: 'focusPasswordHash',
 } as const;
 
 export const DEFAULT_TIMER_STATE: TimerState = {
@@ -97,5 +98,29 @@ export async function getMaxTabsLimit(): Promise<number> {
 
 export async function setMaxTabsLimit(limit: number): Promise<void> {
     await chrome.storage.local.set({ [STORAGE_KEYS.MAX_TABS_LIMIT]: limit });
+}
+
+export async function hashPassword(password: string): Promise<string> {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+export async function getPasswordHash(): Promise<string | null> {
+    const result = await chrome.storage.local.get(STORAGE_KEYS.PASSWORD_HASH) as any;
+    return result[STORAGE_KEYS.PASSWORD_HASH] ?? null;
+}
+
+export async function setPasswordHash(hash: string | null): Promise<void> {
+    await chrome.storage.local.set({ [STORAGE_KEYS.PASSWORD_HASH]: hash });
+}
+
+export async function verifyPassword(password: string): Promise<boolean> {
+    const hash = await getPasswordHash();
+    if (!hash) return true;
+    const inputHash = await hashPassword(password);
+    return hash === inputHash;
 }
 
