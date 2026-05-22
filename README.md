@@ -1,3 +1,7 @@
+# 1.3.0
+
+## New Feature
+- Password protection feature introduced.
 <div align="center">
   <img src="assets/logo.png" alt="Focus Filter Logo" width="128" height="128" />
 
